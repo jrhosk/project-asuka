@@ -1,0 +1,52 @@
+[project]
+name = "vipertools"
+version = "0.0.1"
+description = "Tools and utilities for the RADPS ecosystem."
+authors = [
+    {name = "Joshua Hoskins", email="jhoskins@nrao.edu"},
+]
+readme = "README.md"
+requires-python = ">= 3.9, < 3.12"
+
+dependencies = [
+    "azure-core",
+    "azure-identity",
+    'cerberus',
+    'configparser',
+    'graphviper',
+    'ipywidgets',
+    "microsoft-kiota-abstractions",
+    "microsoft-kiota-authentication-azure",
+    "microsoft-kiota-http",
+    "microsoft-kiota-serialization-json",
+    "microsoft-kiota-serialization-text",
+    "msgraph-core",
+    "msgraph-sdk",
+    'paramiko',
+    'pycryptodome',
+    'pytest',
+    'pytest-cov',
+    'pytest-html',
+    'requests',
+    'rich',
+    'scp',
+    'tqdm',
+    'jupyterlab',
+]
+
+
+[project.optional-dependencies]
+docs = [
+    'ipykernel',
+    'ipympl',
+    'ipython',
+    'jupyter-client',
+    'nbsphinx',
+    'recommonmark',
+    'scanpydoc',
+    'sphinx-autoapi',
+    'sphinx-autosummary-accessors',
+    'sphinx_rtd_theme',
+    'twine',
+    'pandoc'
+]
