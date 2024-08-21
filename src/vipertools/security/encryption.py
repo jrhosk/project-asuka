@@ -9,18 +9,21 @@ from scp import SCPClient
 from graphviper.utils import logger
 
 
-def write_token(file, app_token):
-    logger.debug(f"Writing token to file: {file}")
+def write_to_config(file, credential, value):
+    logger.debug(f"Writing credential to file: {file}")
 
     if pathlib.Path(file).exists():
         config = configparser.ConfigParser()
         config.read(file)
-        config["graph"]["app_token"] = app_token
+
+        section, entry = credential.split(".")
+
+        config[section][entry] = value
 
         with open(file, 'w') as configfile:
             config.write(configfile)
 
-    logger.warning("Caution: By writing token to file, you are creating a persistent version of the security "
+    logger.warning("Caution: By writing credentials to file, you are creating a persistent version of the security "
                    "information do not make this file public!")
 
 
@@ -43,16 +46,15 @@ def get_credentials(persistent=False):
     )
 
     with SCPClient(ssh.get_transport()) as scp:
-        scp.get(remote_path="/.lustre/cv/users/jhoskins/drive/.keys/", local_path=local_path, recursive=True)
+        scp.get(remote_path="/.lustre/cv/users/jhoskins/mstools/.keys/", local_path=local_path, recursive=True)
 
     certificate_path = "/".join((local_path, ".keys"))
-    app_token = decrypt(certificate_path=certificate_path)[0]
-    os.environ["APP_TOKEN"] = app_token
+    client_id = decrypt(certificate_path=certificate_path)[1]
 
     if persistent:
         config_path = str(pathlib.Path(__file__).parent.parent.resolve())
         config_file = "/".join((config_path, "graph/.graph/config.cfg"))
-        write_token(file=config_file, app_token=app_token)
+        write_to_config(file=config_file, credential="azure.client_id", value=client_id)
 
     logger.debug(f"Credential directory: {certificate_path}")
     shutil.rmtree(path=certificate_path, ignore_errors=True)
@@ -61,7 +63,7 @@ def get_credentials(persistent=False):
 
     ssh.close()
 
-    return app_token
+    return client_id
 
 
 def decrypt(certificate_path=None):
