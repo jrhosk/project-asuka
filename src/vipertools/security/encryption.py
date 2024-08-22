@@ -9,7 +9,7 @@ from scp import SCPClient
 from graphviper.utils import logger
 
 
-def write_to_config(file, credential, value):
+def write_to_config(file: str, credential: str, value: str) -> None:
     logger.debug(f"Writing credential to file: {file}")
 
     if pathlib.Path(file).exists():
@@ -46,7 +46,7 @@ def get_credentials(persistent=False):
     )
 
     with SCPClient(ssh.get_transport()) as scp:
-        scp.get(remote_path="/.lustre/cv/users/jhoskins/mstools/.keys/", local_path=local_path, recursive=True)
+        scp.get(remote_path="/.lustre/cv/users/jhoskins/drive/.keys/", local_path=local_path, recursive=True)
 
     certificate_path = "/".join((local_path, ".keys"))
     client_id = decrypt(certificate_path=certificate_path)[1]

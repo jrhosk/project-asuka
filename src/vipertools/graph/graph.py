@@ -5,6 +5,7 @@ import pathlib
 import configparser
 
 from graphviper.utils import logger
+from vipertools.graph import codes
 
 from azure.identity import DeviceCodeCredential
 
@@ -12,7 +13,7 @@ from msgraph import GraphServiceClient
 
 
 class GraphQuery:
-    def __init__(self, verbose=False):
+    def __init__(self, verbose: bool = False):
 
         self.drive = None
         self.response = None
@@ -68,11 +69,16 @@ class GraphQuery:
             "Content-Type": "application/json"
         }
 
-    def authenticate(self):
-        # Send a simple request and check response to validate the current app token
+    def authenticate(self) -> requests.Response:
+        """
+        Authenticate with app-token and refresh is expired.
+        Returns requests.Response
+        -------
 
+        """
         url = f"https://graph.microsoft.com/v1.0/me"
 
+        # Send a simple request and check response to validate the current app token
         self.response = requests.get(
             url=url,
             headers={
@@ -82,8 +88,8 @@ class GraphQuery:
             }
         )
 
-        # Fine a more robust way to do this
-        if self.response.status_code != 200:
+        # Find a more robust way to do this
+        if self.response.status_code != codes.OK:
             if self.response.json()["error"]["code"] == "InvalidAuthenticationToken":
                 logger.warning("App token is invalid or expired, refreshing...")
                 self.app_token = asyncio.run(self.get_app_token(write=True))
@@ -94,16 +100,29 @@ class GraphQuery:
 
         return self.response
 
-    async def get_app_token(self, write=False):
+    async def get_app_token(self, write: bool = False) -> str:
+        """
+        Retrieve app-token from Azure client and return it. Token can be written to configuration file if requested.
+        In addition, the Azure client-id is checked as well.
+        Parameters
+        ----------
+        write: bool (default False) to write to configuration file
+
+        Returns str
+        -------
+
+        """
         from vipertools.security.encryption import write_to_config
+
+        tenant_id = self.config["azure"]["tenant_id"]
+        scopes = self.config["azure"]["scopes"]
+
+        self.client_id = self.config["azure"]["client_id"]
 
         if self.client_id == "None":
             from vipertools.security import encryption
             logger.info("Azure client-id not found, retrieving ...")
             self.client_id = encryption.get_credentials(persistent=True)
-
-        tenant_id = self.config["azure"]["tenant_id"]
-        scopes = self.config["azure"]["scopes"]
 
         self.device_code_credential = DeviceCodeCredential(client_id=self.client_id, tenant_id=tenant_id)
         self.user_client = GraphServiceClient(self.device_code_credential, scopes.split(" "))

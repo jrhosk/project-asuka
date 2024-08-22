@@ -1,5 +1,7 @@
+import json
 import rich
 import requests
+import pathlib
 
 from rich import print
 from rich.filesize import decimal
@@ -16,7 +18,19 @@ class DriveTool:
         self.graph = GraphQuery(True)
         self.response = None
 
-    def get_path(self, path="/"):
+    def get_path(self, path: str = "/") -> requests.Response:
+        """
+
+        Parameters
+        ----------
+        path: str (defaults /)
+            Remote path to retrieve.
+
+        Returns
+        -------
+        requires.Response
+
+        """
         if path == "/":
             # Root directory requires a different call - <sarcasim> this makes perfect sense.</sarcasim>
             url = f"https://{self.graph.hostname}/{self.graph.version}/me/drive/root/children"
@@ -30,24 +44,67 @@ class DriveTool:
             headers=self.graph.header
         )
 
-    def create_link(self, path="/"):
+        return self.response
+
+    def generate_manifest(self, path: str = "/") -> None:
+        """
+        Generate a manifest file from files in NRAO one drive.
+        Parameters
+        ----------
+        path: str, (default /)
+            The remote path to generate the manifest file from.
+
+        Returns
+        -------
+        None
+        """
+        sharepoint_url = "https://nrao-my.sharepoint.com/"
+
+        manifest_path = "/".join((str(pathlib.Path(__file__).parent.resolve()), ".manifest/file.download.json"))
+
+        # Open template download manifest
+        with open(manifest_path, "r") as file:
+            manifest = json.load(file)
+
+        new_manifest = {
+            "version": manifest["version"],
+            "metadata": {}
+        }
+
+        # Query the graph to get the dpath information
         self.get_path(path)
-        #file_list = self.response.json()["value"]
 
-        #for entry in file_list:
-        #    logger.debug(entry["id"])
-        #    url = f"https://{self.graph.hostname}/{self.graph.version}/me/drive/items/{entry['id']}/createLink"
-        #    requests.post(
-        #        url=url,
-        #        json={
-        #            "type": "view",
-        #            "scope": "anonymous"
-        #        }
-        #    )
+        file_list = self.response.json()["value"]
 
-            #logger.debug(self.response.json())
+        for entry in file_list:
+            url = f"https://{self.graph.hostname}/{self.graph.version}/me/drive/items/{entry['id']}/createLink"
+
+            logger.debug(f"processing: {entry['name']} ...")
+            self.response = requests.post(
+                url=url,
+                json={
+                    "type": "view",
+                    "scope": "anonymous"
+                },
+                headers=self.graph.header
+
+            )
+
+            logger.debug(f"link> {self.response.json()['link']['webUrl']}\n")
 
     def listdir(self, path: str = "/") -> None:
+        """
+        List the contents of a remote directory.
+        Parameters
+        ----------
+        path: str, (default "/")
+            Remote path to list the contents from.
+
+        Returns
+        -------
+        None
+
+        """
         self.get_path(path)
 
         tree = Tree(
