@@ -5,7 +5,7 @@ import pathlib
 import configparser
 
 from graphviper.utils import logger
-from vipertools.graph import codes
+from vipertools.graph import codes as status_code
 
 from azure.identity import DeviceCodeCredential
 
@@ -89,7 +89,7 @@ class GraphQuery:
         )
 
         # Find a more robust way to do this
-        if self.response.status_code != codes.OK:
+        if self.response.status_code != status_code.OK:
             if self.response.json()["error"]["code"] == "InvalidAuthenticationToken":
                 logger.warning("App token is invalid or expired, refreshing...")
                 self.app_token = asyncio.run(self.get_app_token(write=True))

@@ -31,6 +31,20 @@ def get_credentials(persistent=False):
     logger.info("Getting credentials")
 
     local_path = str(pathlib.Path(__file__).parent.resolve())
+    config_file = "/".join((local_path, ".config/encryption.cfg"))
+
+    # Verify that the configuration file exists
+    if not pathlib.Path(config_file).exists():
+        logger.error(f"Missing configuration file {config_file}, instantiation failed...")
+
+        return
+
+    config = configparser.ConfigParser()
+    config.read(config_file)
+
+    logger.info(f"Loaded configuration file: {config_file}")
+    logger.info(config["ssh"]["hostname"])
+    logger.info(config["ssh"]["port"])
 
     username = input("Username: ")
     password = getpass.getpass()
@@ -39,8 +53,8 @@ def get_credentials(persistent=False):
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
     ssh.connect(
-        hostname="ssh.cv.nrao.edu",
-        port=22,
+        hostname=config["ssh"]["hostname"],
+        port=int(config["ssh"]["port"]),
         username=username,
         password=password
     )

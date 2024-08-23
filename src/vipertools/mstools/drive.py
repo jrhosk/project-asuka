@@ -3,12 +3,12 @@ import rich
 import requests
 import pathlib
 
-from rich import print
 from rich.filesize import decimal
 from rich.markup import escape
 from rich.text import Text
 from rich.tree import Tree
 
+from vipertools.graph import codes as status_code
 from vipertools.graph import GraphQuery
 from graphviper.utils import logger
 
@@ -46,11 +46,14 @@ class DriveTool:
 
         return self.response
 
-    def generate_manifest(self, path: str = "/") -> None:
+    def generate_manifest(self, path: str = "/", version: str = None) -> None:
         """
         Generate a manifest file from files in NRAO one drive.
         Parameters
         ----------
+        version: str (defaults None)
+                Version of newly generated manifest for.
+
         path: str, (default /)
             The remote path to generate the manifest file from.
 
@@ -62,35 +65,120 @@ class DriveTool:
 
         manifest_path = "/".join((str(pathlib.Path(__file__).parent.resolve()), ".manifest/file.download.json"))
 
-        # Open template download manifest
-        with open(manifest_path, "r") as file:
+        # Open download manifest
+        with open(manifest_path, "r+") as file:
             manifest = json.load(file)
+            file.seek(0)
 
-        new_manifest = {
-            "version": manifest["version"],
-            "metadata": {}
-        }
+            if version is not None:
+                manifest["version"] = version
 
-        # Query the graph to get the dpath information
-        self.get_path(path)
+            # This is the base skeleton from the download manifest
+            _manifest = {
+                "version": manifest["version"],
+                "metadata": {}
+            }
 
-        file_list = self.response.json()["value"]
+            # Query the graph to get the dpath information
+            self.get_path(path)
 
-        for entry in file_list:
-            url = f"https://{self.graph.hostname}/{self.graph.version}/me/drive/items/{entry['id']}/createLink"
+            file_list = self.response.json()["value"]
 
-            logger.debug(f"processing: {entry['name']} ...")
-            self.response = requests.post(
-                url=url,
-                json={
-                    "type": "view",
-                    "scope": "anonymous"
-                },
-                headers=self.graph.header
+            for entry in file_list:
+                url = f"https://{self.graph.hostname}/{self.graph.version}/me/drive/items/{entry['id']}/createLink"
 
-            )
+                self.response = requests.post(
+                    url=url,
+                    json={
+                        "type": "view",
+                        "scope": "anonymous"
+                    },
+                    headers=self.graph.header
+                )
 
-            logger.debug(f"link> {self.response.json()['link']['webUrl']}\n")
+                key_name = entry["name"].rsplit(".zip")[0]
+                link_id = self.response.json()['link']['webUrl'].split(sharepoint_url)[1]
+                logger.debug(f"processing: {key_name} ...")
+
+                _manifest["metadata"][key_name] = manifest["metadata"].setdefault(
+                    key_name, {
+                        "file": entry["name"],
+                        "id": "",
+                        "dtype": "",
+                        "telescope": "",
+                        "size": entry["size"],
+                        "mode": ""
+                    })
+
+                _manifest["metadata"][key_name]["id"] = link_id
+
+            json.dump(_manifest, file)
+            file.truncate()
+
+    def download(self, path: str, filename: str) -> None:
+        """
+        Download a file from onedrive give a path.
+        Parameters
+        ----------
+        path: str  onedrive path where file exists.
+        filename: str file to download
+
+        Returns
+        -------
+
+        """
+        from rich.progress import (Progress, SpinnerColumn, TotalFileSizeColumn, TransferSpeedColumn,
+                                   TaskProgressColumn, BarColumn, TextColumn, TimeRemainingColumn)
+
+        item_id = None
+
+        logger.info(f"Downloading {filename} from {path}...")
+
+        # Get the path information
+        response = self.get_path(path)
+
+        # Find the item-id needed to download the file
+        if response.status_code == status_code.OK:
+            for entry in response.json()["value"]:
+                if entry["name"] == filename:
+                    item_id = entry["id"]
+                    break
+
+        else:
+            logger.error(f"{filename} not found")
+            return None
+
+        # Build the download request url
+        url = f"https://{self.graph.hostname}/{self.graph.version}/me/drive/items/{item_id}/content"
+
+        response = requests.get(
+            url=url,
+            headers={
+                "Authorization": f"Bearer {self.graph.app_token}"
+            }
+        )
+
+        if response.status_code == status_code.OK:
+            total = int(response.headers.get("content-length", 0))
+
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+                TaskProgressColumn(),
+                TransferSpeedColumn(),
+                TimeRemainingColumn(),
+                TotalFileSizeColumn()
+            ) as progress:
+                task = progress.add_task(f"Downloading: {filename}", total=total)
+
+                with open(filename, "wb") as file:
+                    for chunk in response.iter_content(chunk_size=1024):
+                        if chunk:
+                            size = file.write(chunk)
+                            progress.update(task, advance=size)
+        else:
+            logger.error(f"(error {response.status_code}): {filename} failed to download ...")
 
     def listdir(self, path: str = "/") -> None:
         """
@@ -124,15 +212,12 @@ class DriveTool:
             else:
                 text_filename = Text(entry["name"], "green")
 
-                #text_filename.highlight_regex(r"\..*$", "bold red")
+                text_filename.highlight_regex(r"\..*$", "bold red")
                 text_filename.stylize(f" link file://{entry['parentReference']['path']}")
+                text_filename.append(f" ({decimal(entry['size'])})", "blue")
 
-                #file_size = path.stat().st_size
-                #text_filename.append(f" ({decimal(file_size)})", "blue")
                 icon = "📦 " if entry['name'].rsplit(".")[-1] == "zip" else "📄 "
 
-                #icon = "📄 "
-                #icon = "📦 "
                 tree.add(Text(icon) + text_filename)
 
         rich.print(tree)
