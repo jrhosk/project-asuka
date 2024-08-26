@@ -3,6 +3,8 @@ import rich
 import requests
 import pathlib
 
+from requests import Response
+from requests.structures import CaseInsensitiveDict
 from rich.filesize import decimal
 from rich.markup import escape
 from rich.text import Text
@@ -115,7 +117,7 @@ class DriveTool:
             json.dump(_manifest, file)
             file.truncate()
 
-    def download(self, path: str, filename: str) -> None:
+    def download(self, path: str, filename: str) -> int | None:
         """
         Download a file from onedrive give a path.
         Parameters
@@ -162,13 +164,13 @@ class DriveTool:
             total = int(response.headers.get("content-length", 0))
 
             with Progress(
-                SpinnerColumn(),
-                TextColumn("[progress.description]{task.description}"),
-                BarColumn(),
-                TaskProgressColumn(),
-                TransferSpeedColumn(),
-                TimeRemainingColumn(),
-                TotalFileSizeColumn()
+                    SpinnerColumn(),
+                    TextColumn("[progress.description]{task.description}"),
+                    BarColumn(),
+                    TaskProgressColumn(),
+                    TransferSpeedColumn(),
+                    TimeRemainingColumn(),
+                    TotalFileSizeColumn()
             ) as progress:
                 task = progress.add_task(f"Downloading: {filename}", total=total)
 
@@ -177,8 +179,69 @@ class DriveTool:
                         if chunk:
                             size = file.write(chunk)
                             progress.update(task, advance=size)
+
+            return response.status_code
+
         else:
             logger.error(f"(error {response.status_code}): {filename} failed to download ...")
+
+    def upload(self, filename: str, path: str, file_type: str) -> int | None:
+        """
+        Upload a file on onedrive given a file path.
+        Parameters
+        ----------
+        file_type: str media type
+        filename: str local filename of file to be uploaded.
+        path: str  onedrive path where file exists.
+
+        Returns
+        -------
+
+        """
+        from rich.console import Console
+
+        console = Console()
+
+        item_id = None
+
+        logger.warning(f"Currently this function only supports file updates and not file creation.")
+        logger.info(f"Uploading {filename} to {path}...")
+
+        # Get the path information
+        response = self.get_path(path)
+
+        # Find the item-id needed to download the file
+        if response.status_code == status_code.OK:
+            for entry in response.json()["value"]:
+                if entry["name"] == filename:
+                    item_id = entry["id"]
+                    break
+
+        else:
+            logger.error(f"{filename} not found")
+            return None
+
+        with open(f"{filename}", "rb") as file:
+            data = file.read()
+
+        # Build the upload request url
+        url = f"https://{self.graph.hostname}/{self.graph.version}/me/drive/items/{item_id}/content"
+
+        with console.status("[bold green] Uploading file...") as status:
+            response = requests.put(
+                url=url,
+                headers={
+                    "Authorization": f"Bearer {self.graph.app_token}",
+                    "Content-Type": f"application/{file_type}"
+                }, data=data
+            )
+
+        if response.status_code == status_code.OK:
+            logger.info(f"Uploaded {filename} to {path}")
+            return response.status_code
+
+        else:
+            logger.error(f"(error {response.status_code}): {filename} failed to upload ...")
 
     def listdir(self, path: str = "/") -> None:
         """

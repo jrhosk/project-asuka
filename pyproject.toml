@@ -1,6 +1,6 @@
 [project]
 name = "vipertools"
-version = "0.0.1"
+version = "0.0.3"
 description = "Tools and utilities for the RADPS ecosystem."
 authors = [
     {name = "Joshua Hoskins", email="jhoskins@nrao.edu"},
