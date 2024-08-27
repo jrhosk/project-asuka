@@ -3,9 +3,12 @@ import json
 import requests
 
 from graphviper.utils import logger
+from graphviper.utils.console import Colorize
 
 from rich.console import Console
 from rich.table import Table
+
+color = Colorize()
 
 
 def _error_table(response: requests.Response):
@@ -36,4 +39,4 @@ def error(response: requests.Response, table=False) -> None:
         _error_table(response)
 
     else:
-        logger.error(f"({response.status_code}) {response.json()['error']['code']}: {response.json()['error']['message']}")
+        logger.error(f"({color.red(str(response.status_code))}) {color.red(response.json()['error']['code'])}: {response.json()['error']['message']}")

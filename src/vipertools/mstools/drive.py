@@ -75,6 +75,9 @@ class DriveTool:
         -------
         None
         """
+        from rich.console import Console
+
+        console = Console()
         sharepoint_url = "https://nrao-my.sharepoint.com/"
 
         manifest_path = "/".join((str(pathlib.Path(__file__).parent.resolve()), ".manifest/file.download.json"))
@@ -93,37 +96,39 @@ class DriveTool:
                 "metadata": {}
             }
 
+            path = _format_path(path=path)
             # Query the graph to get the dpath information
             self.get_path(path)
 
             file_list = self.response.json()["value"]
 
-            for entry in file_list:
-                url, body, header = self.graph.build_link_request(item_id=entry["id"])
+            with console.status("[bold green] Building manifest...") as status:
+                for entry in file_list:
+                    url, body, header = self.graph.build_link_request(item_id=entry["id"])
 
-                self.response = requests.post(
-                    url=url,
-                    json=body,
-                    headers=header
-                )
+                    self.response = requests.post(
+                        url=url,
+                        json=body,
+                        headers=header
+                    )
 
-                key_name = entry["name"].rsplit(".zip")[0]
-                link_id = self.response.json()['link']['webUrl'].split(sharepoint_url)[1]
-                logger.debug(f"processing: {key_name} ...")
+                    key_name = entry["name"].rsplit(".zip")[0]
+                    link_id = self.response.json()['link']['webUrl'].split(sharepoint_url)[1]
+                    console.print(f"[blue]processing[/]: {key_name} ...")
 
-                _manifest["metadata"][key_name] = manifest["metadata"].setdefault(
-                    key_name, {
-                        "file": entry["name"],
-                        "id": "",
-                        "dtype": "",
-                        "telescope": "",
-                        "size": entry["size"],
-                        "mode": ""
-                    })
+                    _manifest["metadata"][key_name] = manifest["metadata"].setdefault(
+                        key_name, {
+                            "file": entry["name"],
+                            "id": "",
+                            "dtype": "",
+                            "telescope": "",
+                            "size": entry["size"],
+                            "mode": ""
+                        })
 
                 _manifest["metadata"][key_name]["id"] = link_id
 
-            json.dump(_manifest, file)
+            json.dump(_manifest, file, indent=4, sort_keys=True)
             file.truncate()
 
     def download(self, path: str, filename: str) -> Response | int:
@@ -212,6 +217,8 @@ class DriveTool:
 
         logger.info(f"Uploading {filename} to {path}...")
 
+        path = _format_path(path=path)
+
         # Get the path information
         response = self.get_path(path)
 
@@ -240,7 +247,7 @@ class DriveTool:
                 return response.status_code
 
             else:
-                logger.error(f"(error {response.status_code}): {filename} failed to upload ...")
+                handler.error(response, table=self.verbose)
 
         else:
             logger.info(f"{filename} not found, creating new remote file ...")
@@ -296,31 +303,65 @@ class DriveTool:
         None
 
         """
-        self.get_path(path)
+        path = _format_path(path)
 
-        tree = Tree(
-            f":open_file_folder: [link file://{path}]{path}",
-            guide_style="bold bright_blue",
-        )
+        response = self.get_path(path)
 
-        for entry in self.response.json()["value"]:
-            if "folder" in entry.keys():
-                style = ""
-                tree.add(
-                    f"[bold magenta]:open_file_folder: [link file://{path}]{escape(entry['name'])}",
-                    style=style,
-                    guide_style=style,
-                )
+        # Check that folder exists
+        if response.status_code == status_code.OK:
+            tree = Tree(
+                f":open_file_folder: [link file://{path}]{path}",
+                guide_style="bold bright_blue",
+            )
 
-            else:
-                text_filename = Text(entry["name"], "green")
+            for entry in self.response.json()["value"]:
+                if "folder" in entry.keys():
+                    style = ""
+                    tree.add(
+                        f"[bold magenta]:open_file_folder: [link file://{path}]{escape(entry['name'])}",
+                        style=style,
+                        guide_style=style,
+                    )
 
-                text_filename.highlight_regex(r"\..*$", "bold red")
-                text_filename.stylize(f" link file://{entry['parentReference']['path']}")
-                text_filename.append(f" ({decimal(entry['size'])})", "blue")
+                else:
+                    text_filename = Text(entry["name"], "green")
 
-                icon = "📦 " if entry['name'].rsplit(".")[-1] == "zip" else "📄 "
+                    text_filename.highlight_regex(r"\..*$", "bold red")
+                    text_filename.stylize(f" link file://{entry['parentReference']['path']}")
+                    text_filename.append(f" ({decimal(entry['size'])})", "blue")
 
-                tree.add(Text(icon) + text_filename)
+                    icon = "📦 " if entry['name'].rsplit(".")[-1] == "zip" else "📄 "
 
-        rich.print(tree)
+                    tree.add(Text(icon) + text_filename)
+
+            rich.print(tree)
+
+        else:
+            handler.error(response, table=self.verbose)
+
+
+def _format_path(path: str) -> str:
+    """
+    Format a remote path. The path that is sent to the remote query is picky about how the path is formatted so
+    beginning and trailing slashes must be trimmed.
+
+    Parameters
+    ----------
+    path: str
+        Remote path to format.
+
+    Returns str
+    -------
+        Trimmed path
+    """
+
+    if path == "/":
+        return path
+
+    if path.startswith("/"):
+        path = path[1:]
+
+    if path.endswith("/"):
+        path = path[:-1]
+
+    return path

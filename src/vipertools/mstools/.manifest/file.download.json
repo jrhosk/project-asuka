@@ -1,1 +1,85 @@
-{"version": "v0.0.8", "metadata": {"locit-input-pha.cal": {"file": "locit-input-pha.cal.zip", "id": ":f:/g/personal/cshared_nrao_edu/Euw9pU1_0JJKgyVISq3RB4sBk4unpI7RjnC6kteFR1V54g", "dtype": "CASA Cal Table", "telescope": "VLA", "size": "0.000468", "mode": "antenna location cal table"}, "combine_weight.npy": {"file": "combine_weight.npy", "id": ":u:/g/personal/cshared_nrao_edu/EVA1YoGYXk9NlMs1vC2OOY4BLtx1kcl2pLXGEtpqzyrlvA", "dtype": "", "telescope": "", "size": 9750656, "mode": ""}, "ea25_cal_small_after_fixed.split.ms": {"file": "ea25_cal_small_after_fixed.split.ms.zip", "id": ":u:/g/personal/cshared_nrao_edu/EUkbti_Moy1Hs56eEl68paUBmIS1AUP_53dJyQrVdkrYqg", "dtype": "", "telescope": "", "size": 150031008, "mode": ""}, "ea25_cal_small_before_fixed.split.ms": {"file": "ea25_cal_small_before_fixed.split.ms.zip", "id": ":u:/g/personal/cshared_nrao_edu/Ea_S7wi5WsBBnBcXCd0v--kBOK2Ycvb0CXgoDmIwOhnJmw", "dtype": "CASA MS v2", "telescope": "VLA", "size": "0.209", "mode": "Holography"}, "elastic.model": {"file": "elastic.model", "id": ":u:/g/personal/cshared_nrao_edu/EZqb7x0VVJdFgxMmfgWbx5MBpk6oZwQXj-sjXTn6Z8vd0w", "dtype": "", "telescope": "", "size": 556, "mode": ""}, "extract_holog_verification.json": {"file": "extract_holog_verification.json", "id": ":u:/g/personal/cshared_nrao_edu/EXD-3FeaYlVDt1EgAPSjkxgBbVmUJksXhhlALkdFY9A1zw", "dtype": "json", "telescope": "na", "size": "0.000004", "mode": "na"}, "holog_numerical_verification.json": {"file": "holog_numerical_verification.json", "id": ":u:/g/personal/cshared_nrao_edu/EYRQxSwzy71DmREGKmTVStwButJR6D9zzi7S_2ENRA1v8A", "dtype": "json", "telescope": "na", "size": "0.000004", "mode": "na"}, "J1924-2914.ms.calibrated.split.SPW3": {"file": "J1924-2914.ms.calibrated.split.SPW3.zip", "id": ":u:/g/personal/cshared_nrao_edu/EaNAArVr-A9Pp2SupGk8wr8B4kG6VWni-zLpORlZOuz-hw", "dtype": "CASA MS v2", "telescope": "ALMA", "size": "0.055", "mode": "Holography"}, "panel_cutoff_mask.npy": {"file": "panel_cutoff_mask.npy", "id": ":u:/g/personal/cshared_nrao_edu/ERk9gUnIU_VChEzXK-v_lnMBWrPwtZa3F9AdJo5e0wrwkA", "dtype": "", "telescope": "", "size": 178212, "mode": ""}}}
+{
+    "metadata": {
+        "J1924-2914.ms.calibrated.split.SPW3": {
+            "dtype": "CASA MS v2",
+            "file": "J1924-2914.ms.calibrated.split.SPW3.zip",
+            "id": ":u:/g/personal/cshared_nrao_edu/EaNAArVr-A9Pp2SupGk8wr8B4kG6VWni-zLpORlZOuz-hw",
+            "mode": "Holography",
+            "size": "0.055",
+            "telescope": "ALMA"
+        },
+        "combine_weight.npy": {
+            "dtype": "",
+            "file": "combine_weight.npy",
+            "id": ":u:/g/personal/cshared_nrao_edu/EVA1YoGYXk9NlMs1vC2OOY4BLtx1kcl2pLXGEtpqzyrlvA",
+            "mode": "",
+            "size": 9750656,
+            "telescope": ""
+        },
+        "ea25_cal_small_after_fixed.split.ms": {
+            "dtype": "",
+            "file": "ea25_cal_small_after_fixed.split.ms.zip",
+            "id": ":u:/g/personal/cshared_nrao_edu/EUkbti_Moy1Hs56eEl68paUBmIS1AUP_53dJyQrVdkrYqg",
+            "mode": "",
+            "size": 150031008,
+            "telescope": ""
+        },
+        "ea25_cal_small_before_fixed.split.ms": {
+            "dtype": "CASA MS v2",
+            "file": "ea25_cal_small_before_fixed.split.ms.zip",
+            "id": ":u:/g/personal/cshared_nrao_edu/Ea_S7wi5WsBBnBcXCd0v--kBOK2Ycvb0CXgoDmIwOhnJmw",
+            "mode": "Holography",
+            "size": "0.209",
+            "telescope": "VLA"
+        },
+        "elastic.model": {
+            "dtype": "",
+            "file": "elastic.model",
+            "id": ":u:/g/personal/cshared_nrao_edu/EZqb7x0VVJdFgxMmfgWbx5MBpk6oZwQXj-sjXTn6Z8vd0w",
+            "mode": "",
+            "size": 556,
+            "telescope": ""
+        },
+        "extract_holog_verification.json": {
+            "dtype": "json",
+            "file": "extract_holog_verification.json",
+            "id": ":u:/g/personal/cshared_nrao_edu/EXD-3FeaYlVDt1EgAPSjkxgBbVmUJksXhhlALkdFY9A1zw",
+            "mode": "na",
+            "size": "0.000004",
+            "telescope": "na"
+        },
+        "file.download.json": {
+            "dtype": "",
+            "file": "file.download.json",
+            "id": ":u:/g/personal/cshared_nrao_edu/Eb07eF78WiRAjxWwdoi5EJgBkfhSJhs9-xH2aRGZ1ekN_g",
+            "mode": "",
+            "size": 2130,
+            "telescope": ""
+        },
+        "holog_numerical_verification.json": {
+            "dtype": "json",
+            "file": "holog_numerical_verification.json",
+            "id": ":u:/g/personal/cshared_nrao_edu/EYRQxSwzy71DmREGKmTVStwButJR6D9zzi7S_2ENRA1v8A",
+            "mode": "na",
+            "size": "0.000004",
+            "telescope": "na"
+        },
+        "locit-input-pha.cal": {
+            "dtype": "CASA Cal Table",
+            "file": "locit-input-pha.cal.zip",
+            "id": ":f:/g/personal/cshared_nrao_edu/Euw9pU1_0JJKgyVISq3RB4sBk4unpI7RjnC6kteFR1V54g",
+            "mode": "antenna location cal table",
+            "size": "0.000468",
+            "telescope": "VLA"
+        },
+        "panel_cutoff_mask.npy": {
+            "dtype": "",
+            "file": "panel_cutoff_mask.npy",
+            "id": ":u:/g/personal/cshared_nrao_edu/ERk9gUnIU_VChEzXK-v_lnMBWrPwtZa3F9AdJo5e0wrwkA",
+            "mode": "",
+            "size": 178212,
+            "telescope": ""
+        }
+    },
+    "version": "v0.0.10"
+}
