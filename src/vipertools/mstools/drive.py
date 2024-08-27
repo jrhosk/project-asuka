@@ -4,7 +4,6 @@ import requests
 import pathlib
 
 from requests import Response
-from requests.structures import CaseInsensitiveDict
 from rich.filesize import decimal
 from rich.markup import escape
 from rich.text import Text
@@ -19,6 +18,16 @@ class DriveTool:
     def __init__(self):
         self.graph = GraphQuery(True)
         self.response = None
+
+    def info(self):
+        """
+        Simple convenience wrapper to display object info
+        Returns
+        -------
+
+        """
+
+        rich.inspect(self.__class__, methods=True, all=False, private=False)
 
     def get_path(self, path: str = "/") -> requests.Response:
         """
@@ -87,15 +96,12 @@ class DriveTool:
             file_list = self.response.json()["value"]
 
             for entry in file_list:
-                url = f"https://{self.graph.hostname}/{self.graph.version}/me/drive/items/{entry['id']}/createLink"
+                url, body, header = self.graph.build_link_request(item_id=entry["id"])
 
                 self.response = requests.post(
                     url=url,
-                    json={
-                        "type": "view",
-                        "scope": "anonymous"
-                    },
-                    headers=self.graph.header
+                    json=body,
+                    headers=header
                 )
 
                 key_name = entry["name"].rsplit(".zip")[0]
@@ -117,7 +123,7 @@ class DriveTool:
             json.dump(_manifest, file)
             file.truncate()
 
-    def download(self, path: str, filename: str) -> int | None:
+    def download(self, path: str, filename: str) -> Response | int:
         """
         Download a file from onedrive give a path.
         Parameters
@@ -148,16 +154,14 @@ class DriveTool:
 
         else:
             logger.error(f"{filename} not found")
-            return None
+            return response
 
         # Build the download request url
-        url = f"https://{self.graph.hostname}/{self.graph.version}/me/drive/items/{item_id}/content"
+        url, header = self.graph.build_download_request(item_id=item_id)
 
         response = requests.get(
             url=url,
-            headers={
-                "Authorization": f"Bearer {self.graph.app_token}"
-            }
+            headers=header
         )
 
         if response.status_code == status_code.OK:
@@ -185,12 +189,11 @@ class DriveTool:
         else:
             logger.error(f"(error {response.status_code}): {filename} failed to download ...")
 
-    def upload(self, filename: str, path: str, file_type: str) -> int | None:
+    def upload(self, filename: str, path: str) -> int | None:
         """
         Upload a file on onedrive given a file path.
         Parameters
         ----------
-        file_type: str media type
         filename: str local filename of file to be uploaded.
         path: str  onedrive path where file exists.
 
@@ -204,7 +207,6 @@ class DriveTool:
 
         item_id = None
 
-        logger.warning(f"Currently this function only supports file updates and not file creation.")
         logger.info(f"Uploading {filename} to {path}...")
 
         # Get the path information
@@ -217,26 +219,61 @@ class DriveTool:
                     item_id = entry["id"]
                     break
 
+            with open(f"{filename}", "rb") as file:
+                data = file.read()
+
+            # Build the upload request url
+            url, header = self.graph.build_upload_request(item_id=item_id, filename=filename)
+
+            with console.status("[bold green] Uploading file...") as status:
+                response = requests.put(
+                    url=url,
+                    headers=header,
+                    data=data
+                )
+
+            if response.status_code == status_code.OK:
+                logger.info(f"Uploaded {filename} to {path}")
+                return response.status_code
+
+            else:
+                logger.error(f"(error {response.status_code}): {filename} failed to upload ...")
+
         else:
-            logger.error(f"{filename} not found")
-            return None
+            logger.info(f"{filename} not found, creating new remote file ...")
+            self.upload_new_file(filename=filename, path=path)
+
+    def upload_new_file(self, filename: str, path: str) -> int | None:
+        """
+        Upload a new file on onedrive given a file path.
+        Parameters
+        ----------
+
+        filename: str local filename of file to be uploaded.
+        path: str  onedrive path where file exists.
+
+        Returns
+        -------
+
+        """
+        from rich.console import Console
+
+        console = Console()
 
         with open(f"{filename}", "rb") as file:
             data = file.read()
 
         # Build the upload request url
-        url = f"https://{self.graph.hostname}/{self.graph.version}/me/drive/items/{item_id}/content"
+        url, header = self.graph.build_upload_request(filename=filename, path=path, mode="create")
 
         with console.status("[bold green] Uploading file...") as status:
             response = requests.put(
                 url=url,
-                headers={
-                    "Authorization": f"Bearer {self.graph.app_token}",
-                    "Content-Type": f"application/{file_type}"
-                }, data=data
+                headers=header,
+                data=data
             )
 
-        if response.status_code == status_code.OK:
+        if response.status_code == response.status_code == status_code.CREATED:
             logger.info(f"Uploaded {filename} to {path}")
             return response.status_code
 

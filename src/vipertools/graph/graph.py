@@ -1,4 +1,5 @@
 import os
+import rich
 import asyncio
 import requests
 import pathlib
@@ -69,6 +70,16 @@ class GraphQuery:
             "Content-Type": "application/json"
         }
 
+    def info(self):
+        """
+        Simple convenience wrapper to display object info
+        Returns
+        -------
+
+        """
+
+        rich.inspect(self.__class__, methods=True, all=False, private=False)
+
     def authenticate(self) -> requests.Response:
         """
         Authenticate with app-token and refresh is expired.
@@ -137,3 +148,105 @@ class GraphQuery:
             )
 
         return access_token.token
+
+    def build_download_request(self, item_id: int) -> tuple[str, dict[str, str]]:
+        """
+
+        Parameters
+        ----------
+        item_id: int
+            Onedrive specific id associated with file.
+
+        Returns tuple[str, dict[str, str]]
+        -------
+            url and minimal header required for download request.
+
+        """
+        # Build the download request url
+        url = f"https://{self.hostname}/{self.version}/me/drive/items/{item_id}/content"
+
+        headers = {
+            "Authorization": f"Bearer {self.app_token}"
+        }
+
+        return url, headers
+
+    def build_link_request(
+            self,
+            item_id: int,
+            permissions: str = "view",
+            scope: str = "anonymous") -> tuple[str, dict[str, str], dict[str, str]]:
+        """
+
+        Parameters
+        ----------
+        item_id: int
+            Onedrive specific id associated with file.
+        permissions: str
+            One of "view", "edit" or "embed".
+        scope: str
+            The scope of the created link. "anonymous", "organization" or "users"
+
+        Returns tuple[str, dict[str, str], dict[str, str]]
+        -------
+            url, body and minimal header required for download request.
+
+        """
+        url = f"https://{self.hostname}/{self.version}/me/drive/items/{item_id}/createLink"
+
+        body = {
+            "type": f"{permissions}",
+            "scope": f"{scope}"
+        }
+        return url, body, self.header
+
+    def build_upload_request(
+            self, item_id: int = None,
+            path: str = None,
+            filename: str = "",
+            mode:str = "update"
+    ) -> tuple[str, dict[str, str]]:
+        """
+
+        Parameters
+        ----------
+        path: str
+            The path of the file to be uploaded.
+        mode: str
+            Mode with which to upload file.
+        item_id: int
+            Onedrive specific id associated with file.
+        filename: str
+            The name of the file to be uploaded.
+
+        Returns tuple[str, dict[str, str]]
+        -------
+            url and minimal header required for upload request.
+        """
+        import mimetypes
+
+        mimetypes.add_type("application/x-binary", ".npy")
+        mimetypes.add_type("application/x-binary", ".npz")
+
+        if (item_id is None) and (mode == "update"):
+            logger.error("Must specify item_id when running in update mode")
+
+        if (path is None) and (mode == "create"):
+            logger.error("Must specify path when running in create mode")
+
+        file_type = mimetypes.guess_type(filename)[0] if mimetypes.guess_type(filename)[0] else "application/octet-stream"
+
+        if mode == "create":
+            url = f"https://{self.hostname}/{self.version}/me/drive/root:/{path}/{filename}:/content"
+
+        else:
+            url = f"https://{self.hostname}/{self.version}/me/drive/items/{item_id}/content"
+
+        header = {
+            "Authorization": f"Bearer {self.app_token}",
+            "Content-Type": f"application/{file_type}"
+        }
+
+        return url, header
+
+
