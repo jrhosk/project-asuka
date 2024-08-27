@@ -197,7 +197,7 @@ class DriveTool:
         else:
             handler.error(response, table=self.verbose)
 
-    def upload(self, filename: str, path: str) -> int | None:
+    def upload(self, filename: str, path: str) -> requests.Response:
         """
         Upload a file on onedrive given a file path.
         Parameters
@@ -244,16 +244,18 @@ class DriveTool:
 
             if response.status_code == status_code.OK:
                 logger.info(f"Uploaded {filename} to {path}")
-                return response.status_code
+                return response
 
             else:
                 handler.error(response, table=self.verbose)
+                return response
+
 
         else:
             logger.info(f"{filename} not found, creating new remote file ...")
-            self.upload_new_file(filename=filename, path=path)
+            return self.upload_new_file(filename=filename, path=path)
 
-    def upload_new_file(self, filename: str, path: str) -> int | None:
+    def upload_new_file(self, filename: str, path: str) -> requests.Response:
         """
         Upload a new file on onedrive given a file path.
         Parameters
@@ -285,10 +287,11 @@ class DriveTool:
 
         if response.status_code == response.status_code == status_code.CREATED:
             logger.info(f"Uploaded {filename} to {path}")
-            return response.status_code
+            return response
 
         else:
             handler.error(response, table=self.verbose)
+            return response
 
     def listdir(self, path: str = "/") -> None:
         """

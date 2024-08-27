@@ -4,6 +4,7 @@ import requests
 
 from graphviper.utils import logger
 from graphviper.utils.console import Colorize
+from requests import Response
 
 from rich.console import Console
 from rich.table import Table
@@ -26,7 +27,7 @@ def _error_table(response: requests.Response):
     console.print(table)
 
 
-def error(response: requests.Response, table=False) -> None:
+def error(response: requests.Response, table=False):
     """
     Formatted, fancy requests error messages handling
 
