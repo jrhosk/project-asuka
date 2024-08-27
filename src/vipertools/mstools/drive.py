@@ -126,7 +126,7 @@ class DriveTool:
                             "mode": ""
                         })
 
-                _manifest["metadata"][key_name]["id"] = link_id
+                    _manifest["metadata"][key_name]["id"] = link_id
 
             json.dump(_manifest, file, indent=4, sort_keys=True)
             file.truncate()
@@ -229,11 +229,16 @@ class DriveTool:
                     item_id = entry["id"]
                     break
 
+            # If the item_id is not set, the file doesn't exist in the remote directory; create it.
+            if item_id is None:
+                logger.info(f"{filename} not found, creating new remote file ...")
+                return self.upload_new_file(filename=filename, path=path)
+
             with open(f"{filename}", "rb") as file:
                 data = file.read()
 
             # Build the upload request url
-            url, header = self.graph.build_upload_request(item_id=item_id, filename=filename)
+            url, header = self.graph.build_upload_request(item_id=item_id, filename=filename, mode="update")
 
             with console.status("[bold green] Uploading file...") as status:
                 response = requests.put(
@@ -252,8 +257,8 @@ class DriveTool:
 
 
         else:
-            logger.info(f"{filename} not found, creating new remote file ...")
-            return self.upload_new_file(filename=filename, path=path)
+            handler.error(response)
+            return response
 
     def upload_new_file(self, filename: str, path: str) -> requests.Response:
         """
