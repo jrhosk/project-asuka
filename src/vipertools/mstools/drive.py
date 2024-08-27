@@ -11,13 +11,16 @@ from rich.tree import Tree
 
 from vipertools.graph import codes as status_code
 from vipertools.graph import GraphQuery
+from vipertools.graph import handler
+
 from graphviper.utils import logger
 
 
 class DriveTool:
-    def __init__(self):
-        self.graph = GraphQuery(True)
+    def __init__(self, verbose: bool = False):
+        self.graph = GraphQuery(verbose=verbose)
         self.response = None
+        self.verbose = verbose
 
     def info(self):
         """
@@ -153,7 +156,7 @@ class DriveTool:
                     break
 
         else:
-            logger.error(f"{filename} not found")
+            handler.error(response, table=self.verbose)
             return response
 
         # Build the download request url
@@ -187,7 +190,7 @@ class DriveTool:
             return response.status_code
 
         else:
-            logger.error(f"(error {response.status_code}): {filename} failed to download ...")
+            handler.error(response, table=self.verbose)
 
     def upload(self, filename: str, path: str) -> int | None:
         """
@@ -278,7 +281,7 @@ class DriveTool:
             return response.status_code
 
         else:
-            logger.error(f"(error {response.status_code}): {filename} failed to upload ...")
+            handler.error(response, table=self.verbose)
 
     def listdir(self, path: str = "/") -> None:
         """

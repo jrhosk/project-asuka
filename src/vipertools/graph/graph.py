@@ -7,6 +7,7 @@ import configparser
 
 from graphviper.utils import logger
 from vipertools.graph import codes as status_code
+from vipertools.graph import handler
 
 from azure.identity import DeviceCodeCredential
 
@@ -21,6 +22,7 @@ class GraphQuery:
         self.device_code_credential = None
         self.user_client = None
         self.client_id = None
+        self.verbose = verbose
 
         if verbose:
             logger.get_logger().setLevel("DEBUG")
@@ -106,8 +108,7 @@ class GraphQuery:
                 self.app_token = asyncio.run(self.get_app_token(write=True))
 
             else:
-                logger.warning("Something went wrong while authentication...")
-                logger.warning(f"({self.response.json()['error']['code']}): {self.response.json()['error']['message']}")
+                handler.error(self.response, table=self.verbose)
 
         return self.response
 
