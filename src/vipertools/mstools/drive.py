@@ -1,4 +1,6 @@
 import json
+import shutil
+
 import rich
 import requests
 import pathlib
@@ -60,11 +62,14 @@ class DriveTool:
 
         return self.response
 
-    def generate_manifest(self, path: str = "/", version: str = None) -> None:
+    def generate_manifest(self, path: str = "/", version: str = None, destination: str = None) -> None:
         """
         Generate a manifest file from files in NRAO one drive.
         Parameters
         ----------
+        destination: str (defaults None)
+            Destination path to generate manifest.
+
         version: str (defaults None)
                 Version of newly generated manifest for.
 
@@ -80,7 +85,10 @@ class DriveTool:
         console = Console()
         sharepoint_url = "https://nrao-my.sharepoint.com/"
 
-        manifest_path = "/".join((str(pathlib.Path(__file__).parent.resolve()), ".manifest/file.download.json"))
+        manifest_path = pathlib.Path(__file__).parent.resolve().joinpath(".manifest/file.download.json")
+
+        if not manifest_path.exists():
+            manifest_path = _create_manifest(str(manifest_path.parent))
 
         # Open download manifest
         with open(manifest_path, "r+") as file:
@@ -130,6 +138,17 @@ class DriveTool:
 
             json.dump(_manifest, file, indent=4, sort_keys=True)
             file.truncate()
+
+        # destination becomes current directory is not specified
+        if destination is None:
+            destination = str(pathlib.Path())
+
+        # Create the directory if it doesn't exist.
+        if not pathlib.Path(destination).exists():
+            pathlib.Path(destination).mkdir(parents=True, exist_ok=True)
+
+        # Copy file to required destination
+        shutil.copy(manifest_path, destination)
 
     def download(self, path: str, filename: str) -> Response | int:
         """
@@ -229,16 +248,20 @@ class DriveTool:
                     item_id = entry["id"]
                     break
 
+            # Need to separate the filename from the full file path before sending the request else we end up
+            # uploading the full directory structure.
+            name = pathlib.Path(filename).name
+
             # If the item_id is not set, the file doesn't exist in the remote directory; create it.
             if item_id is None:
                 logger.info(f"{filename} not found, creating new remote file ...")
-                return self.upload_new_file(filename=filename, path=path)
+                return self.upload_new_file(filename=name, path=path)
 
             with open(f"{filename}", "rb") as file:
                 data = file.read()
 
             # Build the upload request url
-            url, header = self.graph.build_upload_request(item_id=item_id, filename=filename, mode="update")
+            url, header = self.graph.build_upload_request(item_id=item_id, filename=name, mode="update")
 
             with console.status("[bold green] Uploading file...") as status:
                 response = requests.put(
@@ -254,7 +277,6 @@ class DriveTool:
             else:
                 handler.error(response, table=self.verbose)
                 return response
-
 
         else:
             handler.error(response)
@@ -373,3 +395,17 @@ def _format_path(path: str) -> str:
         path = path[:-1]
 
     return path
+
+
+def _create_manifest(path: str) -> str:
+    manifest = {
+        "version": "",
+        "metadata": {
+
+        }
+    }
+    manifest_path = pathlib.Path(path).joinpath("file.download.json")
+    with open(manifest_path, "w") as file:
+        json.dump(manifest, file, indent=4)
+
+    return str(manifest_path)
