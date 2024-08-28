@@ -1,6 +1,4 @@
 import json
-import shutil
-
 import rich
 import requests
 import pathlib
@@ -16,13 +14,26 @@ from vipertools.graph import GraphQuery
 from vipertools.graph import handler
 
 from graphviper.utils import logger
+from graphviper.utils import parameter
+
+from rich.console import Console
+
+console = Console()
 
 
 class DriveTool:
+    __slots__ = ["graph", "response", "verbose"]
+
     def __init__(self, verbose: bool = False):
         self.graph = GraphQuery(verbose=verbose)
         self.response = None
         self.verbose = verbose
+
+    def __repr__(self):
+        return f"DriveTool(verbose={self.verbose})"
+
+    def __str__(self, *args, **kwargs):
+        return self.__repr__()
 
     def info(self):
         """
@@ -32,8 +43,9 @@ class DriveTool:
 
         """
 
-        rich.inspect(self.__class__, methods=True, all=False, private=False)
+        rich.inspect(self.__class__, methods=True, all=False, private=False, dunder=False)
 
+    #@parameter.validate(config_dir='ENV:TOOLS_CONFIG_PATH')
     def get_path(self, path: str = "/") -> requests.Response:
         """
 
@@ -62,6 +74,7 @@ class DriveTool:
 
         return self.response
 
+    #@parameter.validate(config_dir='ENV:TOOLS_CONFIG_PATH')
     def generate_manifest(self, path: str = "/", version: str = None, destination: str = None) -> None:
         """
         Generate a manifest file from files in NRAO one drive.
@@ -80,15 +93,25 @@ class DriveTool:
         -------
         None
         """
-        from rich.console import Console
 
-        console = Console()
         sharepoint_url = "https://nrao-my.sharepoint.com/"
 
-        manifest_path = pathlib.Path(__file__).parent.resolve().joinpath(".manifest/file.download.json")
+        # destination becomes current directory is not specified
+        if destination is None:
+            logger.debug("File destination not defined, writing to current working directory ...")
+            destination = str(pathlib.Path())
 
+        # Create the directory if it doesn't exist.
+        if not pathlib.Path(destination).exists():
+            logger.debug(f"Creating manifest directory: {str(pathlib.Path(destination).resolve())} ...")
+            pathlib.Path(destination).resolve().mkdir(parents=True, exist_ok=True)
+
+        manifest_path = pathlib.Path(destination).resolve().joinpath("file.download.json")
         if not manifest_path.exists():
+            logger.debug(f"Creating new manifest file form template ...")
             manifest_path = _create_manifest(str(manifest_path.parent))
+
+        logger.info(f"Generating manifest for {str(manifest_path)}")
 
         # Open download manifest
         with open(manifest_path, "r+") as file:
@@ -139,17 +162,7 @@ class DriveTool:
             json.dump(_manifest, file, indent=4, sort_keys=True)
             file.truncate()
 
-        # destination becomes current directory is not specified
-        if destination is None:
-            destination = str(pathlib.Path())
-
-        # Create the directory if it doesn't exist.
-        if not pathlib.Path(destination).exists():
-            pathlib.Path(destination).mkdir(parents=True, exist_ok=True)
-
-        # Copy file to required destination
-        shutil.copy(manifest_path, destination)
-
+    #@parameter.validate(config_dir='ENV:TOOLS_CONFIG_PATH')
     def download(self, path: str, filename: str) -> Response | int:
         """
         Download a file from onedrive give a path.
@@ -216,6 +229,7 @@ class DriveTool:
         else:
             handler.error(response, table=self.verbose)
 
+    #@parameter.validate(config_dir='ENV:TOOLS_CONFIG_PATH')
     def upload(self, filename: str, path: str) -> requests.Response:
         """
         Upload a file on onedrive given a file path.
@@ -228,9 +242,6 @@ class DriveTool:
         -------
 
         """
-        from rich.console import Console
-
-        console = Console()
 
         item_id = None
 
@@ -295,9 +306,6 @@ class DriveTool:
         -------
 
         """
-        from rich.console import Console
-
-        console = Console()
 
         with open(f"{filename}", "rb") as file:
             data = file.read()
@@ -320,6 +328,7 @@ class DriveTool:
             handler.error(response, table=self.verbose)
             return response
 
+    #@parameter.validate(config_dir='ENV:TOOLS_CONFIG_PATH')
     def listdir(self, path: str = "/") -> None:
         """
         List the contents of a remote directory.

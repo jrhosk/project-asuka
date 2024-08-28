@@ -1,0 +1,75 @@
+{
+    "DriveTool.get_path": {
+        "path": {
+            "nullable": false,
+            "required": false,
+            "type": [
+                "string"
+            ]
+        }
+    },
+    "DriveTool.generate_manifest": {
+        "path": {
+            "nullable": false,
+            "required": false,
+            "type": [
+                "string"
+            ]
+        },
+      "version": {
+            "nullable": true,
+            "required": false,
+            "type": [
+                "string"
+            ]
+        },
+      "destination": {
+            "nullable": true,
+            "required": false,
+            "type": [
+                "string"
+            ]
+        }
+    },
+    "DriveTool.download": {
+      "path": {
+        "nullable": false,
+        "required": true,
+        "type": [
+          "string"
+        ]
+      },
+      "filename": {
+        "nullable": false,
+        "required": true,
+        "type": [
+          "string"
+        ]
+      }
+    },
+    "DriveTool.upload": {
+      "path": {
+        "nullable": false,
+        "required": true,
+        "type": [
+          "string"
+        ]
+      },
+      "filename": {
+        "nullable": false,
+        "required": true,
+        "type": [
+          "string"
+        ]
+      }
+    },
+    "DriveTool.listdir": {
+      "path": {
+        "nullable": false,
+        "required": false,
+        "type": [
+          "string"
+        ]
+      }
+    }
+}

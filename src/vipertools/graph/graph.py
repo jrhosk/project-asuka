@@ -6,6 +6,8 @@ import pathlib
 import configparser
 
 from graphviper.utils import logger
+from graphviper.utils import parameter
+
 from vipertools.graph import codes as status_code
 from vipertools.graph import handler
 
@@ -13,21 +15,42 @@ from azure.identity import DeviceCodeCredential
 
 from msgraph import GraphServiceClient
 
+from typing import Union
+
 
 class GraphQuery:
+    __slots__ = [
+        "response",
+        "device_code_credential",
+        "user_client",
+        "client_id",
+        "verbose",
+        "config_file",
+        "config",
+        "hostname",
+        "version",
+        "app_token",
+        "header"
+    ]
+
     def __init__(self, verbose: bool = False):
 
-        self.drive = None
         self.response = None
         self.device_code_credential = None
         self.user_client = None
         self.client_id = None
         self.verbose = verbose
+        self.config = None
+        self.config_file = None
+        self.hostname = None
+        self.version = None
+        self.app_token = None
+        self.header = None
 
         if verbose:
             logger.get_logger().setLevel("DEBUG")
 
-        self.config_file = "/".join((str(pathlib.Path(__file__).parent.resolve()), ".graph/config.cfg"))
+        self.config_file = str(pathlib.Path(__file__).parent.resolve().joinpath(".graph/config.cfg"))
 
         logger.debug(f"{self.config_file}")
 
@@ -54,7 +77,7 @@ class GraphQuery:
         if os.getenv("APP_TOKEN"):
             # Could add some verification that the token is correct here
             self.app_token = os.getenv("APP_TOKEN")
-            logger.debug(f"Using app-token from environment...")
+            logger.info(f"Using app-token from environment...")
 
         # If app-token is not defined in configuration file, get it from msgraph
         if self.app_token == "None":
@@ -63,7 +86,7 @@ class GraphQuery:
 
         # Authenticate app-token that you have
         else:
-            logger.debug("Authenticating app-token with server ...")
+            logger.info("Authenticating app-token with server ...")
             self.authenticate()
 
         self.header = {
@@ -71,6 +94,13 @@ class GraphQuery:
             "Authorization": f"Bearer {self.app_token}",
             "Content-Type": "application/json"
         }
+
+    def __repr__(self):
+        name = self.__class__.__name__
+        return f"<{name} hostname: {self.hostname} version: {self.version} client config: {self.config_file}>"
+
+    def __str__(self):
+        return f"{self.__class__.__name__}({self.hostname}/{self.version})"
 
     def info(self):
         """
@@ -80,7 +110,7 @@ class GraphQuery:
 
         """
 
-        rich.inspect(self.__class__, methods=True, all=False, private=False)
+        rich.inspect(self.__class__, methods=True, all=False, private=False, dunder=False)
 
     def authenticate(self) -> requests.Response:
         """
@@ -112,6 +142,7 @@ class GraphQuery:
 
         return self.response
 
+    #@parameter.validate(config_dir='ENV:TOOLS_CONFIG_PATH')
     async def get_app_token(self, write: bool = False) -> str:
         """
         Retrieve app-token from Azure client and return it. Token can be written to configuration file if requested.
@@ -150,7 +181,8 @@ class GraphQuery:
 
         return access_token.token
 
-    def build_download_request(self, item_id: int) -> tuple[str, dict[str, str]]:
+    #@parameter.validate(config_dir='ENV:TOOLS_CONFIG_PATH')
+    def build_download_request(self, item_id: Union[int, str]) -> tuple[str, dict[str, str]]:
         """
 
         Parameters
@@ -172,9 +204,10 @@ class GraphQuery:
 
         return url, headers
 
+    #@parameter.validate(config_dir='ENV:TOOLS_CONFIG_PATH')
     def build_link_request(
             self,
-            item_id: int,
+            item_id: Union[str, int],
             permissions: str = "view",
             scope: str = "anonymous") -> tuple[str, dict[str, str], dict[str, str]]:
         """
@@ -201,11 +234,12 @@ class GraphQuery:
         }
         return url, body, self.header
 
+    #@parameter.validate(config_dir='ENV:TOOLS_CONFIG_PATH')
     def build_upload_request(
-            self, item_id: int = None,
+            self, item_id: Union[int, str, None] = None,
             path: str = None,
             filename: str = "",
-            mode:str = "update"
+            mode: str = "update"
     ) -> tuple[str, dict[str, str]]:
         """
 
@@ -215,7 +249,7 @@ class GraphQuery:
             The path of the file to be uploaded.
         mode: str
             Mode with which to upload file.
-        item_id: int
+        item_id: int | str | None
             Onedrive specific id associated with file.
         filename: str
             The name of the file to be uploaded.
@@ -235,7 +269,8 @@ class GraphQuery:
         if (path is None) and (mode == "create"):
             logger.error("Must specify path when running in create mode")
 
-        file_type = mimetypes.guess_type(filename)[0] if mimetypes.guess_type(filename)[0] else "application/octet-stream"
+        file_type = mimetypes.guess_type(filename)[0] if mimetypes.guess_type(filename)[
+            0] else "application/octet-stream"
 
         if mode == "create":
             url = f"https://{self.hostname}/{self.version}/me/drive/root:/{path}/{filename}:/content"
@@ -249,5 +284,3 @@ class GraphQuery:
         }
 
         return url, header
-
-

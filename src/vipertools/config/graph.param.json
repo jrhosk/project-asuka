@@ -1,0 +1,76 @@
+{
+  "GraphQuery.get_app_token": {
+        "write": {
+            "nullable": false,
+            "required": false,
+            "type": [
+                "boolean"
+            ]
+        }
+    },
+  "GraphQuery.build_download_request": {
+        "item_id": {
+            "nullable": false,
+            "required": true,
+            "type": [
+                "integer",
+                "string"
+            ]
+        }
+    },
+  "GraphQuery.build_link_request": {
+        "item_id": {
+            "nullable": false,
+            "required": true,
+            "type": [
+                "int",
+                "string"
+            ]
+        },
+      "permissions": {
+            "nullable": false,
+            "required": false,
+            "type": [
+                "string"
+            ]
+        },
+      "scope": {
+            "nullable": false,
+            "required": false,
+            "type": [
+                "string"
+            ]
+        }
+    },
+    "GraphQuery.build_upload_request": {
+        "item_id": {
+            "nullable": false,
+            "required": true,
+            "type": [
+                "integer",
+                "string"
+            ]
+        },
+      "path": {
+            "nullable": true,
+            "required": false,
+            "type": [
+                "string"
+            ]
+        },
+      "filename": {
+            "nullable": false,
+            "required": false,
+            "type": [
+                "string"
+            ]
+        },
+      "mode": {
+            "nullable": false,
+            "required": false,
+            "type": [
+                "string"
+            ]
+        }
+    }
+}
