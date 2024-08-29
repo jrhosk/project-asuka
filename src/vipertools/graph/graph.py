@@ -142,7 +142,7 @@ class GraphQuery:
 
         return self.response
 
-    #@parameter.validate(config_dir='ENV:TOOLS_CONFIG_PATH')
+    #@parameter.validate()
     async def get_app_token(self, write: bool = False) -> str:
         """
         Retrieve app-token from Azure client and return it. Token can be written to configuration file if requested.
@@ -181,7 +181,7 @@ class GraphQuery:
 
         return access_token.token
 
-    #@parameter.validate(config_dir='ENV:TOOLS_CONFIG_PATH')
+    #@parameter.validate()
     def build_download_request(self, item_id: Union[int, str]) -> tuple[str, dict[str, str]]:
         """
 
@@ -204,7 +204,7 @@ class GraphQuery:
 
         return url, headers
 
-    #@parameter.validate(config_dir='ENV:TOOLS_CONFIG_PATH')
+    #@parameter.validate()
     def build_link_request(
             self,
             item_id: Union[str, int],
@@ -234,7 +234,7 @@ class GraphQuery:
         }
         return url, body, self.header
 
-    #@parameter.validate(config_dir='ENV:TOOLS_CONFIG_PATH')
+    #@parameter.validate()
     def build_upload_request(
             self, item_id: Union[int, str, None] = None,
             path: str = None,

@@ -45,7 +45,7 @@ class DriveTool:
 
         rich.inspect(self.__class__, methods=True, all=False, private=False, dunder=False)
 
-    #@parameter.validate(config_dir='ENV:TOOLS_CONFIG_PATH')
+    #@parameter.validate()
     def get_path(self, path: str = "/") -> requests.Response:
         """
 
@@ -74,7 +74,7 @@ class DriveTool:
 
         return self.response
 
-    #@parameter.validate(config_dir='ENV:TOOLS_CONFIG_PATH')
+    #@parameter.validate()
     def generate_manifest(self, path: str = "/", version: str = None, destination: str = None) -> None:
         """
         Generate a manifest file from files in NRAO one drive.
@@ -162,7 +162,7 @@ class DriveTool:
             json.dump(_manifest, file, indent=4, sort_keys=True)
             file.truncate()
 
-    #@parameter.validate(config_dir='ENV:TOOLS_CONFIG_PATH')
+    #@parameter.validate()
     def download(self, path: str, filename: str) -> Response | int:
         """
         Download a file from onedrive give a path.
@@ -229,7 +229,7 @@ class DriveTool:
         else:
             handler.error(response, table=self.verbose)
 
-    #@parameter.validate(config_dir='ENV:TOOLS_CONFIG_PATH')
+    #@parameter.validate()
     def upload(self, filename: str, path: str) -> requests.Response:
         """
         Upload a file on onedrive given a file path.
@@ -328,7 +328,7 @@ class DriveTool:
             handler.error(response, table=self.verbose)
             return response
 
-    #@parameter.validate(config_dir='ENV:TOOLS_CONFIG_PATH')
+    #@parameter.validate()
     def listdir(self, path: str = "/") -> None:
         """
         List the contents of a remote directory.
